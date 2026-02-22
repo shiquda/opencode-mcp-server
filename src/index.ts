@@ -135,7 +135,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_list_sessions',
-    description: 'List all OpenCode sessions',
+    description: 'List all OpenCode sessions. By default, filters out subagent sessions (those containing "subagent" in the title).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -146,6 +146,10 @@ const TOOLS: Tool[] = [
         limit: {
           type: 'number',
           description: 'Maximum number of results (optional)',
+        },
+        include_subagents: {
+          type: 'boolean',
+          description: 'Whether to include subagent sessions (default: false)',
         },
         url: {
           type: 'string',
@@ -393,11 +397,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'opencode_list_sessions': {
-        const { directory, limit } = args as { directory?: string; limit?: number };
+        const { directory, limit, include_subagents } = args as { 
+          directory?: string; 
+          limit?: number;
+          include_subagents?: boolean;
+        };
         
         const queryParams = new URLSearchParams();
         if (directory) queryParams.append('directory', directory);
-        if (limit) queryParams.append('limit', limit.toString());
+        // Request more sessions if we need to filter subagents
+        if (limit) queryParams.append('limit', (limit * 2).toString());
         
         const response = await fetch(`${baseUrl}/session?${queryParams}`, {
           headers: authHeaders,
@@ -407,7 +416,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error(`Failed to list sessions: ${response.status}`);
         }
 
-        const sessions = await response.json() as Array<{ id: string; title?: string; time?: { created: number } }>;
+        let sessions = await response.json() as Array<{ id: string; title?: string; time?: { created: number } }>;
+        
+        // Filter out subagent sessions by default
+        const showSubagents = include_subagents ?? false;
+        if (!showSubagents) {
+          sessions = sessions.filter(s => !s.title?.toLowerCase().includes('subagent'));
+        }
+        
+        // Apply limit after filtering
+        if (limit && sessions.length > limit) {
+          sessions = sessions.slice(0, limit);
+        }
         
         if (sessions.length === 0) {
           return {
@@ -419,8 +439,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           `${i + 1}. ${s.title || 'Untitled'}\n   ID: ${s.id}\n   Created: ${s.time?.created ? new Date(s.time.created).toLocaleString() : 'unknown'}`
         ).join('\n\n');
 
+        const filterInfo = showSubagents ? '(including subagents)' : '(main sessions only)';
         return {
-          content: [{ type: 'text', text: `📋 Session List (${sessions.length}):\n\n${sessionList}` }],
+          content: [{ type: 'text', text: `📋 Session List ${filterInfo} (${sessions.length}):\n\n${sessionList}` }],
         };
       }
 
