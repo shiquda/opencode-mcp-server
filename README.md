@@ -17,20 +17,17 @@ A Model Context Protocol (MCP) server that enables remote interaction with [Open
 
 ## 🛠️ Installation
 
-### Option 1: Install from npm (Recommended)
-
-The easiest way to install is via npm:
+### Quick Start (One-line setup)
 
 ```bash
-# Install globally
-npm install -g opencode-mcp-server
-
-# Or use with npx (no installation required)
-npx opencode-mcp-server
+npx -y opencode-mcp-server
 ```
 
-Then configure in OpenClaw:
+### OpenClaw Configuration
 
+Add to `~/.openclaw/config/mcporter.json`:
+
+**Local OpenCode:**
 ```json
 {
   "mcpServers": {
@@ -48,54 +45,32 @@ Then configure in OpenClaw:
 }
 ```
 
-### Option 2: Quick Setup via OpenClaw (Recommended for OpenClaw Users)
+**Remote via Tailscale:**
+```json
+{
+  "mcpServers": {
+    "opencode-remote": {
+      "command": "npx",
+      "args": ["-y", "opencode-mcp-server"],
+      "env": {
+        "OPENCODE_URL": "http://100.x.x.x:4096",
+        "OPENCODE_USERNAME": "opencode",
+        "OPENCODE_PASSWORD": "your-password",
+        "OPENCODE_AUTH_TYPE": "basic"
+      }
+    }
+  }
+}
+```
 
-Copy and paste the following instructions to your OpenClaw agent to automatically configure this MCP server:
+### Global Installation (Optional)
 
-> Please help me set up the OpenCode MCP Server in OpenClaw. Follow these steps:
->
-> **Step 1: Clone the repository**
-> ```bash
-> git clone https://github.com/shiquda/opencode-mcp-server.git ~/.openclaw/mcp-servers/opencode-mcp-server
-> ```
->
-> **Step 2: Install dependencies and build**
-> ```bash
-> cd ~/.openclaw/mcp-servers/opencode-mcp-server && npm install && npm run build
-> ```
->
-> **Step 3: Add to MCP configuration**
-> Add the following to `~/.openclaw/config/mcporter.json` (replace `YOUR_OPENCODE_PASSWORD` with your OpenCode password):
-> ```json
-> {
->   "mcpServers": {
->     "opencode-remote": {
->       "command": "node",
->       "args": [
->         "/home/USERNAME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js",
->         "stdio"
->       ],
->       "env": {
->         "OPENCODE_URL": "http://127.0.0.1:4096",
->         "OPENCODE_USERNAME": "opencode",
->         "OPENCODE_PASSWORD": "YOUR_OPENCODE_PASSWORD",
->         "OPENCODE_AUTH_TYPE": "basic"
->       }
->     }
->   }
-> }
-> ```
-> Note: Replace `USERNAME` with your actual Linux username (use `whoami` to check).
->
-> **Step 4: Test the connection**
-> After configuration, call the `opencode_check_health` tool to test if the connection works.
->
-> For remote OpenCode server (via Tailscale), use the Tailscale IP instead:
-> ```json
-> "OPENCODE_URL": "http://100.x.x.x:4096"
-> ```
+```bash
+npm install -g opencode-mcp-server
+opencode-mcp-server
+```
 
-### Option 2: Manual Installation
+### Build from Source
 
 ```bash
 # Clone the repository
