@@ -13,23 +13,23 @@ import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-// 加载环境变量
+// Load environment variables
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '../.env') });
 
-// 默认配置（从环境变量读取）
+// Default configuration (loaded from environment variables)
 const DEFAULT_CONFIG = {
   url: process.env.OPENCODE_URL || 'http://localhost:8848',
   username: process.env.OPENCODE_USERNAME || '',
   password: process.env.OPENCODE_PASSWORD || '',
   token: process.env.OPENCODE_TOKEN || '',
-  authType: process.env.OPENCODE_AUTH_TYPE || 'basic', // OpenCode 使用 basic auth
+  authType: process.env.OPENCODE_AUTH_TYPE || 'basic', // OpenCode uses basic auth by default
 };
 
 const PORT = parseInt(process.env.PORT || '3000');
 
-// 认证头生成函数
+// Generate authentication headers
 function getAuthHeader(config: typeof DEFAULT_CONFIG): Record<string, string> {
   const headers: Record<string, string> = {};
   
@@ -42,7 +42,7 @@ function getAuthHeader(config: typeof DEFAULT_CONFIG): Record<string, string> {
       }
       break;
     case 'basic':
-      // OpenCode 使用 basic auth，用户名是 "opencode"，密码是设置的密码
+      // OpenCode uses basic auth, username is "opencode", password is the one set during serve
       const user = config.username || 'opencode';
       const pass = config.password;
       if (pass) {
@@ -58,41 +58,41 @@ function getAuthHeader(config: typeof DEFAULT_CONFIG): Record<string, string> {
   return headers;
 }
 
-// 定义工具
+// Define tools
 const TOOLS: Tool[] = [
   {
     name: 'opencode_chat',
-    description: '发送消息给 OpenCode Agent 执行编程任务。会先创建会话（如果没有session_id），然后发送消息。',
+    description: 'Send a message to OpenCode Agent to execute programming tasks. Creates a new session if no session_id is provided, then sends the message.',
     inputSchema: {
       type: 'object',
       properties: {
         message: {
           type: 'string',
-          description: '要发送给 OpenCode 的消息/任务描述（必需）',
+          description: 'Message/task description to send to OpenCode (required)',
         },
         session_id: {
           type: 'string',
-          description: '可选的会话 ID。如果不提供，会自动创建新会话',
+          description: 'Optional session ID. If not provided, a new session will be created automatically',
         },
         directory: {
           type: 'string',
-          description: '工作目录（可选，用于指定项目路径）',
+          description: 'Working directory (optional, for specifying project path)',
         },
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选，默认: opencode）',
+          description: 'Username (optional, default: opencode)',
         },
         password: {
           type: 'string',
-          description: '密码（可选，从环境变量读取）',
+          description: 'Password (optional, loaded from environment variable)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型: basic | bearer | none（可选，默认: basic）',
+          description: 'Authentication type: basic | bearer | none (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -101,33 +101,33 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_create_session',
-    description: '创建新的 OpenCode 会话',
+    description: 'Create a new OpenCode session',
     inputSchema: {
       type: 'object',
       properties: {
         title: {
           type: 'string',
-          description: '会话标题（可选）',
+          description: 'Session title (optional)',
         },
         directory: {
           type: 'string',
-          description: '工作目录（可选）',
+          description: 'Working directory (optional)',
         },
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选）',
+          description: 'Username (optional)',
         },
         password: {
           type: 'string',
-          description: '密码（可选）',
+          description: 'Password (optional)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型（可选，默认: basic）',
+          description: 'Authentication type (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -135,33 +135,33 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_list_sessions',
-    description: '列出所有 OpenCode 会话',
+    description: 'List all OpenCode sessions',
     inputSchema: {
       type: 'object',
       properties: {
         directory: {
           type: 'string',
-          description: '按目录过滤（可选）',
+          description: 'Filter by directory (optional)',
         },
         limit: {
           type: 'number',
-          description: '最大返回数量（可选）',
+          description: 'Maximum number of results (optional)',
         },
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选）',
+          description: 'Username (optional)',
         },
         password: {
           type: 'string',
-          description: '密码（可选）',
+          description: 'Password (optional)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型（可选，默认: basic）',
+          description: 'Authentication type (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -169,29 +169,29 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_get_session',
-    description: '获取特定会话的详细信息',
+    description: 'Get detailed information about a specific session',
     inputSchema: {
       type: 'object',
       properties: {
         session_id: {
           type: 'string',
-          description: '会话 ID（必需，格式: ses_xxx）',
+          description: 'Session ID (required, format: ses_xxx)',
         },
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选）',
+          description: 'Username (optional)',
         },
         password: {
           type: 'string',
-          description: '密码（可选）',
+          description: 'Password (optional)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型（可选，默认: basic）',
+          description: 'Authentication type (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -200,33 +200,33 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_get_messages',
-    description: '获取会话的消息列表',
+    description: 'Get the message list from a session',
     inputSchema: {
       type: 'object',
       properties: {
         session_id: {
           type: 'string',
-          description: '会话 ID（必需）',
+          description: 'Session ID (required)',
         },
         limit: {
           type: 'number',
-          description: '最大消息数量（可选）',
+          description: 'Maximum number of messages (optional)',
         },
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选）',
+          description: 'Username (optional)',
         },
         password: {
           type: 'string',
-          description: '密码（可选）',
+          description: 'Password (optional)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型（可选，默认: basic）',
+          description: 'Authentication type (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -235,25 +235,25 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'opencode_check_health',
-    description: '检查 OpenCode 服务器连接状态',
+    description: 'Check OpenCode server connection status',
     inputSchema: {
       type: 'object',
       properties: {
         url: {
           type: 'string',
-          description: `OpenCode 服务器地址（可选，默认: ${DEFAULT_CONFIG.url}）`,
+          description: `OpenCode server address (optional, default: ${DEFAULT_CONFIG.url})`,
         },
         username: {
           type: 'string',
-          description: '用户名（可选）',
+          description: 'Username (optional)',
         },
         password: {
           type: 'string',
-          description: '密码（可选）',
+          description: 'Password (optional)',
         },
         auth_type: {
           type: 'string',
-          description: '认证类型（可选，默认: basic）',
+          description: 'Authentication type (optional, default: basic)',
           enum: ['basic', 'bearer', 'none'],
         },
       },
@@ -261,11 +261,11 @@ const TOOLS: Tool[] = [
   },
 ];
 
-// 创建 MCP Server
+// Create MCP Server
 const server = new Server(
   {
     name: 'opencode-remote-mcp',
-    version: '2.0.0',
+    version: '0.1.0',
   },
   {
     capabilities: {
@@ -274,17 +274,17 @@ const server = new Server(
   }
 );
 
-// 处理工具列表请求
+// Handle tool list requests
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools: TOOLS };
 });
 
-// 处理工具调用请求
+// Handle tool call requests
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    // 合并配置：参数 > 环境变量 > 默认值
+    // Merge configuration: params > env vars > defaults
     const config = {
       url: (args?.url as string) || DEFAULT_CONFIG.url,
       username: (args?.username as string) || DEFAULT_CONFIG.username,
@@ -293,7 +293,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       authType: ((args?.auth_type as string) || DEFAULT_CONFIG.authType).toLowerCase(),
     };
 
-    // 确保 URL 格式正确
+    // Ensure URL format is correct
     const baseUrl = config.url.replace(/\/$/, '');
     const authHeaders = getAuthHeader(config);
 
@@ -307,7 +307,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         let targetSessionId = session_id;
         
-        // 如果没有提供 session_id，先创建新会话
+        // Create a new session if no session_id is provided
         if (!targetSessionId) {
           const queryParams = new URLSearchParams();
           if (directory) queryParams.append('directory', directory);
@@ -321,14 +321,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
           if (!createResponse.ok) {
             const error = await createResponse.text();
-            throw new Error(`创建会话失败: ${createResponse.status} - ${error}`);
+            throw new Error(`Failed to create session: ${createResponse.status} - ${error}`);
           }
 
           const sessionData = await createResponse.json() as { id: string };
           targetSessionId = sessionData.id;
         }
         
-        // 发送消息到会话
+        // Send message to session
         const queryParams = new URLSearchParams();
         if (directory) queryParams.append('directory', directory);
         
@@ -345,7 +345,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         if (!response.ok) {
           const error = await response.text();
-          throw new Error(`发送消息失败: ${response.status} - ${error}`);
+          throw new Error(`Failed to send message: ${response.status} - ${error}`);
         }
 
         const data = await response.json() as { info?: { id: string }; parts?: any[] };
@@ -353,7 +353,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✅ 消息已发送！\n会话 ID: ${targetSessionId}\n消息 ID: ${data.info?.id || 'unknown'}\n\n响应:\n${JSON.stringify(data, null, 2)}`,
+              text: `✅ Message sent!\nSession ID: ${targetSessionId}\nMessage ID: ${data.info?.id || 'unknown'}\n\nResponse:\n${JSON.stringify(data, null, 2)}`,
             },
           ],
         };
@@ -378,7 +378,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         if (!response.ok) {
           const error = await response.text();
-          throw new Error(`创建会话失败: ${response.status} - ${error}`);
+          throw new Error(`Failed to create session: ${response.status} - ${error}`);
         }
 
         const data = await response.json() as { id: string; title?: string };
@@ -386,7 +386,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✅ 会话创建成功！\n会话 ID: ${data.id}\n标题: ${data.title || '未命名'}`,
+              text: `✅ Session created successfully!\nSession ID: ${data.id}\nTitle: ${data.title || 'Untitled'}`,
             },
           ],
         };
@@ -404,23 +404,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
 
         if (!response.ok) {
-          throw new Error(`获取会话列表失败: ${response.status}`);
+          throw new Error(`Failed to list sessions: ${response.status}`);
         }
 
         const sessions = await response.json() as Array<{ id: string; title?: string; time?: { created: number } }>;
         
         if (sessions.length === 0) {
           return {
-            content: [{ type: 'text', text: '暂无会话' }],
+            content: [{ type: 'text', text: 'No sessions found' }],
           };
         }
 
         const sessionList = sessions.map((s, i) => 
-          `${i + 1}. ${s.title || '未命名'}\n   ID: ${s.id}\n   创建: ${s.time?.created ? new Date(s.time.created).toLocaleString() : 'unknown'}`
+          `${i + 1}. ${s.title || 'Untitled'}\n   ID: ${s.id}\n   Created: ${s.time?.created ? new Date(s.time.created).toLocaleString() : 'unknown'}`
         ).join('\n\n');
 
         return {
-          content: [{ type: 'text', text: `📋 会话列表 (${sessions.length}):\n\n${sessionList}` }],
+          content: [{ type: 'text', text: `📋 Session List (${sessions.length}):\n\n${sessionList}` }],
         };
       }
 
@@ -432,7 +432,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
 
         if (!response.ok) {
-          throw new Error(`获取会话失败: ${response.status}`);
+          throw new Error(`Failed to get session: ${response.status}`);
         }
 
         const data = await response.json();
@@ -440,7 +440,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `📄 会话详情:\n${JSON.stringify(data, null, 2)}`,
+              text: `📄 Session Details:\n${JSON.stringify(data, null, 2)}`,
             },
           ],
         };
@@ -457,7 +457,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
 
         if (!response.ok) {
-          throw new Error(`获取消息失败: ${response.status}`);
+          throw new Error(`Failed to get messages: ${response.status}`);
         }
 
         const messages = await response.json();
@@ -465,7 +465,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `💬 消息列表:\n${JSON.stringify(messages, null, 2)}`,
+              text: `💬 Message List:\n${JSON.stringify(messages, null, 2)}`,
             },
           ],
         };
@@ -477,7 +477,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         });
 
         if (!response.ok) {
-          throw new Error(`健康检查失败: ${response.status}`);
+          throw new Error(`Health check failed: ${response.status}`);
         }
 
         const data = await response.json() as { healthy: boolean; version: string };
@@ -485,31 +485,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✅ OpenCode 服务器运行正常\n版本: ${data.version}\n健康: ${data.healthy ? '是' : '否'}\n地址: ${baseUrl}`,
+              text: `✅ OpenCode server is running normally\nVersion: ${data.version}\nHealthy: ${data.healthy ? 'Yes' : 'No'}\nAddress: ${baseUrl}`,
             },
           ],
         };
       }
 
       default:
-        throw new Error(`未知工具: ${name}`);
+        throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: 'text', text: `❌ 错误: ${errorMessage}` }],
+      content: [{ type: 'text', text: `❌ Error: ${errorMessage}` }],
       isError: true,
     };
   }
 });
 
-// 启动模式选择
+// Select launch mode
 const mode = process.argv[2] || 'stdio';
 
 if (mode === 'stdio') {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('OpenCode MCP Server v2.0.0 running on stdio');
+  console.error('OpenCode MCP Server v0.1.0 running on stdio');
   console.error(`Default endpoint: ${DEFAULT_CONFIG.url}`);
 } else if (mode === 'sse') {
   const app = express();
@@ -535,24 +535,24 @@ if (mode === 'stdio') {
   app.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
-      version: '2.0.0',
+      version: '0.1.0',
       defaultEndpoint: DEFAULT_CONFIG.url,
       authType: DEFAULT_CONFIG.authType,
     });
   });
 
   app.listen(PORT, () => {
-    console.log(`OpenCode MCP Server v2.0.0 running on http://localhost:${PORT}`);
+    console.log(`OpenCode MCP Server v0.1.0 running on http://localhost:${PORT}`);
     console.log(`Default OpenCode endpoint: ${DEFAULT_CONFIG.url}`);
     console.log(`Default auth type: ${DEFAULT_CONFIG.authType}`);
     console.log('');
-    console.log('可用工具:');
-    console.log('  - opencode_chat: 发送编程任务（自动创建会话）');
-    console.log('  - opencode_create_session: 创建会话');
-    console.log('  - opencode_list_sessions: 列会话');
-    console.log('  - opencode_get_session: 获取会话详情');
-    console.log('  - opencode_get_messages: 获取会话消息');
-    console.log('  - opencode_check_health: 健康检查');
+    console.log('Available tools:');
+    console.log('  - opencode_chat: Send programming tasks (auto-creates session)');
+    console.log('  - opencode_create_session: Create session');
+    console.log('  - opencode_list_sessions: List sessions');
+    console.log('  - opencode_get_session: Get session details');
+    console.log('  - opencode_get_messages: Get session messages');
+    console.log('  - opencode_check_health: Health check');
   });
 } else {
   console.error('Usage: node index.js [stdio|sse]');
