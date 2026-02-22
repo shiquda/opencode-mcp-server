@@ -35,10 +35,10 @@ Add to `~/.openclaw/config/mcporter.json`:
       "command": "npx",
       "args": ["-y", "opencode-mcp-server"],
       "env": {
-        "OPENCODE_URL": "http://127.0.0.1:4096",
-        "OPENCODE_USERNAME": "opencode",
-        "OPENCODE_PASSWORD": "your-password",
-        "OPENCODE_AUTH_TYPE": "basic"
+        "OPENCODE_URL": "http://127.0.0.1:4096", 
+        "OPENCODE_USERNAME": "opencode", // optional, default is "opencode"
+        "OPENCODE_PASSWORD": "your-password", // optional, default is empty
+        "OPENCODE_AUTH_TYPE": "basic" // optional, default is "basic"
       }
     }
   }
@@ -128,6 +128,7 @@ tailscale ip -4
 ```
 
 Then configure with Tailscale IP:
+
 ```env
 OPENCODE_URL=http://100.x.x.x:4096
 ```
@@ -184,6 +185,7 @@ Server will start at `http://localhost:3000`.
 OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
 
 **Configuration format:**
+
 ```json
 {
   "mcpServers": {
@@ -202,6 +204,7 @@ OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
 ```
 
 **Security Best Practices:**
+
 - Use absolute paths in `args` (avoid `$HOME` or `~`)
 - Store sensitive credentials in environment variables
 - Use `127.0.0.1` for local servers, Tailscale IP for remote
@@ -225,6 +228,7 @@ OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
   }
 }
 ```
+
 ```
 
 ## 🛠️ Available Tools
@@ -254,6 +258,7 @@ Send a programming task to OpenCode Agent. Automatically creates a new session i
 Create a new OpenCode session.
 
 **Parameters:**
+
 - `title` (optional): Session title
 - `directory` (optional): Working directory
 - `url`, `username`, `password`, `auth_type` (optional): Connection settings
@@ -263,6 +268,7 @@ Create a new OpenCode session.
 List all OpenCode sessions.
 
 **Parameters:**
+
 - `directory` (optional): Filter by directory
 - `limit` (optional): Maximum results
 - Connection settings (optional)
@@ -272,6 +278,7 @@ List all OpenCode sessions.
 Get detailed information about a specific session.
 
 **Parameters:**
+
 - `session_id` (required): Session ID
 - Connection settings (optional)
 
@@ -280,6 +287,7 @@ Get detailed information about a specific session.
 Get message list from a session.
 
 **Parameters:**
+
 - `session_id` (required): Session ID
 - `limit` (optional): Maximum messages
 - Connection settings (optional)
@@ -289,6 +297,7 @@ Get message list from a session.
 Check OpenCode server connectivity.
 
 **Parameters:**
+
 - `url` (optional): Server URL to check
 - Other auth parameters (optional)
 
@@ -355,6 +364,7 @@ OPENCODE_TOKEN=your-token-here
 ```
 
 Request header:
+
 ```
 Authorization: Bearer your-token-here
 ```
@@ -368,6 +378,7 @@ OPENCODE_PASSWORD=secret123
 ```
 
 Request header:
+
 ```
 Authorization: Basic b3BlbmNvZGU6c2VjcmV0MTIz
 ```
@@ -389,6 +400,7 @@ curl http://127.0.0.1:3000/health
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
