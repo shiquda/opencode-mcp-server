@@ -25,10 +25,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runtime parameter override for each tool call
 - Custom URL support for multi-server management
 - Comprehensive error handling and reporting
-
-## [1.0.0] - 2026-02-22
-
-### Added
-- Project initialization
-- Basic MCP server structure
-- OpenCode API integration research
+- English-only codebase for international accessibility
