@@ -38,10 +38,10 @@ Then configure in OpenClaw:
       "command": "npx",
       "args": ["-y", "opencode-mcp-server"],
       "env": {
-        "OPENCODE_URL": "http://127.0.0.1:4096",
-        "OPENCODE_USERNAME": "opencode",
-        "OPENCODE_PASSWORD": "your-password",
-        "OPENCODE_AUTH_TYPE": "basic"
+        "OPENCODE_URL": "http://127.0.0.1:4096", 
+        "OPENCODE_USERNAME": "opencode", // optional, default is "opencode"
+        "OPENCODE_PASSWORD": "your-password", // optional, default is empty
+        "OPENCODE_AUTH_TYPE": "basic" // optional, default is "basic"
       }
     }
   }
@@ -55,17 +55,20 @@ Copy and paste the following instructions to your OpenClaw agent to automaticall
 > Please help me set up the OpenCode MCP Server in OpenClaw. Follow these steps:
 >
 > **Step 1: Clone the repository**
+>
 > ```bash
 > git clone https://github.com/shiquda/opencode-mcp-server.git ~/.openclaw/mcp-servers/opencode-mcp-server
 > ```
 >
 > **Step 2: Install dependencies and build**
+>
 > ```bash
 > cd ~/.openclaw/mcp-servers/opencode-mcp-server && npm install && npm run build
 > ```
 >
 > **Step 3: Add to MCP configuration**
 > Add the following to `~/.openclaw/config/mcporter.json` (replace `YOUR_OPENCODE_PASSWORD` with your OpenCode password):
+>
 > ```json
 > {
 >   "mcpServers": {
@@ -85,12 +88,14 @@ Copy and paste the following instructions to your OpenClaw agent to automaticall
 >   }
 > }
 > ```
+>
 > Note: Replace `USERNAME` with your actual Linux username (use `whoami` to check).
 >
 > **Step 4: Test the connection**
 > After configuration, call the `opencode_check_health` tool to test if the connection works.
 >
 > For remote OpenCode server (via Tailscale), use the Tailscale IP instead:
+>
 > ```json
 > "OPENCODE_URL": "http://100.x.x.x:4096"
 > ```
@@ -153,6 +158,7 @@ tailscale ip -4
 ```
 
 Then configure with Tailscale IP:
+
 ```env
 OPENCODE_URL=http://100.x.x.x:4096
 ```
@@ -209,6 +215,7 @@ Server will start at `http://localhost:3000`.
 OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
 
 **Configuration format:**
+
 ```json
 {
   "mcpServers": {
@@ -227,6 +234,7 @@ OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
 ```
 
 **Security Best Practices:**
+
 - Use absolute paths in `args` (avoid `$HOME` or `~`)
 - Store sensitive credentials in environment variables
 - Use `127.0.0.1` for local servers, Tailscale IP for remote
@@ -250,6 +258,7 @@ OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
   }
 }
 ```
+
 ```
 
 ## 🛠️ Available Tools
@@ -279,6 +288,7 @@ Send a programming task to OpenCode Agent. Automatically creates a new session i
 Create a new OpenCode session.
 
 **Parameters:**
+
 - `title` (optional): Session title
 - `directory` (optional): Working directory
 - `url`, `username`, `password`, `auth_type` (optional): Connection settings
@@ -288,6 +298,7 @@ Create a new OpenCode session.
 List all OpenCode sessions.
 
 **Parameters:**
+
 - `directory` (optional): Filter by directory
 - `limit` (optional): Maximum results
 - Connection settings (optional)
@@ -297,6 +308,7 @@ List all OpenCode sessions.
 Get detailed information about a specific session.
 
 **Parameters:**
+
 - `session_id` (required): Session ID
 - Connection settings (optional)
 
@@ -305,6 +317,7 @@ Get detailed information about a specific session.
 Get message list from a session.
 
 **Parameters:**
+
 - `session_id` (required): Session ID
 - `limit` (optional): Maximum messages
 - Connection settings (optional)
@@ -314,6 +327,7 @@ Get message list from a session.
 Check OpenCode server connectivity.
 
 **Parameters:**
+
 - `url` (optional): Server URL to check
 - Other auth parameters (optional)
 
@@ -380,6 +394,7 @@ OPENCODE_TOKEN=your-token-here
 ```
 
 Request header:
+
 ```
 Authorization: Bearer your-token-here
 ```
@@ -393,6 +408,7 @@ OPENCODE_PASSWORD=secret123
 ```
 
 Request header:
+
 ```
 Authorization: Basic b3BlbmNvZGU6c2VjcmV0MTIz
 ```
@@ -414,6 +430,7 @@ curl http://127.0.0.1:3000/health
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
