@@ -2,43 +2,30 @@
 
 This guide explains how to publish the OpenCode MCP Server to npm.
 
-## 📋 Prerequisites
+## Prerequisites
 
 1. **npm account**: Create one at https://www.npmjs.com/signup
 2. **Login to npm CLI**:
    ```bash
    npm login
    ```
-3. **Verify package name is available**:
-   ```bash
-   npm search opencode-mcp-server
-   ```
 
-## 🚀 Publishing Steps
+## Publishing Steps
 
-### 1. Update Version
-
-Update the version in `package.json` following [Semantic Versioning](https://semver.org/):
+### 1. Update Version (if needed)
 
 ```bash
 # For patch updates (bug fixes)
 npm version patch
 
-# For minor updates (new features, backward compatible)
+# For minor updates (new features)
 npm version minor
 
 # For major updates (breaking changes)
 npm version major
 ```
 
-Or manually edit `package.json`:
-```json
-{
-  "version": "0.1.0"
-}
-```
-
-### 2. Build Project
+### 2. Build the Project
 
 ```bash
 npm run build
@@ -66,9 +53,6 @@ npm pack --dry-run
 ```bash
 # Publish (for public packages)
 npm publish --access public
-
-# For scoped packages (@username/package-name)
-npm publish --access public
 ```
 
 ### 6. Verify Publication
@@ -81,42 +65,56 @@ open https://www.npmjs.com/package/opencode-mcp-server
 npm install -g opencode-mcp-server
 ```
 
-## 🔄 Updating the Package
+## Using the Published Package
+
+After publishing, users can install and use it in two ways:
+
+### Option 1: Global Installation
+
+```bash
+npm install -g opencode-mcp-server
+opencode-mcp-server
+```
+
+### Option 2: npx (No Installation)
+
+```bash
+npx -y opencode-mcp-server
+```
+
+### Option 3: OpenClaw Configuration
+
+```json
+{
+  "mcpServers": {
+    "opencode-remote": {
+      "command": "npx",
+      "args": ["-y", "opencode-mcp-server"],
+      "env": {
+        "OPENCODE_URL": "http://127.0.0.1:4096",
+        "OPENCODE_USERNAME": "opencode",
+        "OPENCODE_PASSWORD": "your-password",
+        "OPENCODE_AUTH_TYPE": "basic"
+      }
+    }
+  }
+}
+```
+
+## Updating the Package
 
 1. Make your changes
 2. Update version: `npm version patch|minor|major`
 3. Build: `npm run build`
 4. Publish: `npm publish`
 
-## 🏷️ Tagging Releases
+## Troubleshooting
 
-After publishing to npm, tag the release on GitHub:
+- **403 Forbidden**: Check if you're logged in: `npm whoami`
+- **Package name taken**: Check availability: `npm search opencode-mcp-server`
+- **Build errors**: Ensure TypeScript compiles: `npm run build`
 
-```bash
-# Push tags
-git push origin --tags
-
-# Or create release via GitHub CLI
-gh release create v0.1.0 --title "v0.1.0" --notes "Release notes"
-```
-
-## 📦 Package Contents
-
-The following files are included in the npm package (as defined in `package.json` `files` field):
-
-- `dist/` - Compiled JavaScript files
-- `README.md` - Documentation
-- `LICENSE` - MIT License
-- `CHANGELOG.md` - Version history
-
-## ⚠️ Important Notes
-
-- **Never commit `.env` files** - they contain sensitive data
-- **Always build before publishing** - the `prepare` script should handle this
-- **Test locally first** - use `npm pack` and `npm link` to test
-- **Update CHANGELOG.md** - document what changed in each version
-
-## 🔗 Useful Commands
+## Useful Commands
 
 ```bash
 # Unpublish a version (within 72 hours)
@@ -127,13 +125,4 @@ npm deprecate opencode-mcp-server@0.1.0 "Use version 0.2.0 instead"
 
 # View package info
 npm view opencode-mcp-server
-
-# Check who owns the package
-npm owner ls opencode-mcp-server
 ```
-
-## 📚 References
-
-- [npm Publishing Guide](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry)
-- [Semantic Versioning](https://semver.org/)
-- [package.json Documentation](https://docs.npmjs.com/cli/v10/configuring-npm/package-json)
