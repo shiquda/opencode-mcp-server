@@ -35,7 +35,7 @@ Create a `.env` file:
 
 ```env
 # OpenCode server URL (default: local)
-OPENCODE_URL=http://127.0.0.1:8848
+OPENCODE_URL=http://127.0.0.1:4096
 
 # Authentication type: basic | bearer | none
 OPENCODE_AUTH_TYPE=basic
@@ -74,7 +74,7 @@ tailscale ip -4
 
 Then configure with Tailscale IP:
 ```env
-OPENCODE_URL=http://100.x.x.x:8848
+OPENCODE_URL=http://100.x.x.x:4096
 ```
 
 ### Method 2: ngrok
@@ -86,7 +86,7 @@ OPENCODE_URL=http://100.x.x.x:8848
 # https://ngrok.com/download
 
 # Expose your OpenCode server
-ngrok http 8848
+ngrok http 4096
 
 # Use the provided https URL
 OPENCODE_URL=https://xxxx.ngrok-free.app
@@ -101,7 +101,7 @@ OPENCODE_URL=https://xxxx.ngrok-free.app
 ./frpc -c frpc.ini
 
 # Use your VPS IP in configuration
-OPENCODE_URL=http://your-vps-ip:8848
+OPENCODE_URL=http://your-vps-ip:4096
 ```
 
 ## 🏃 Usage
@@ -135,7 +135,7 @@ Edit `~/.openclaw/mcp.json`:
       "command": "node",
       "args": ["/path/to/opencode-mcp-server/dist/index.js", "stdio"],
       "env": {
-        "OPENCODE_URL": "http://127.0.0.1:8848",
+        "OPENCODE_URL": "http://127.0.0.1:4096",
         "OPENCODE_USERNAME": "opencode",
         "OPENCODE_PASSWORD": "your-password",
         "OPENCODE_AUTH_TYPE": "basic"
@@ -154,7 +154,7 @@ Edit `~/.openclaw/mcp.json`:
       "command": "node",
       "args": ["/path/to/opencode-mcp-server/dist/index.js", "stdio"],
       "env": {
-        "OPENCODE_URL": "http://100.72.207.100:8848",
+        "OPENCODE_URL": "http://100.72.207.100:4096",
         "OPENCODE_USERNAME": "opencode",
         "OPENCODE_PASSWORD": "your-password",
         "OPENCODE_AUTH_TYPE": "basic"
@@ -240,7 +240,7 @@ For local development with OpenCode running on the same machine:
   "name": "opencode_chat",
   "arguments": {
     "message": "Help me create a login function",
-    "url": "http://127.0.0.1:8848"
+    "url": "http://127.0.0.1:4096"
   }
 }
 ```
@@ -254,7 +254,7 @@ When your OpenCode server is on another machine in your Tailscale network:
   "name": "opencode_chat",
   "arguments": {
     "message": "Write me a web scraper",
-    "url": "http://100.72.207.100:8848"
+    "url": "http://100.72.207.100:4096"
   }
 }
 ```
@@ -277,7 +277,7 @@ Manage multiple OpenCode instances across different machines:
 {
   "name": "opencode_list_sessions",
   "arguments": {
-    "url": "http://100.72.207.100:8848"
+    "url": "http://100.72.207.100:4096"
   }
 }
 ```
@@ -330,7 +330,7 @@ Response:
 {
   "status": "ok",
   "version": "0.1.0",
-  "defaultEndpoint": "http://127.0.0.1:8848",
+  "defaultEndpoint": "http://127.0.0.1:4096",
   "authType": "basic"
 }
 ```
