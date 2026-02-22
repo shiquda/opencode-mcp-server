@@ -17,6 +17,54 @@ A Model Context Protocol (MCP) server that enables remote interaction with [Open
 
 ## 🛠️ Installation
 
+### Option 1: Quick Setup via OpenClaw (Recommended for OpenClaw Users)
+
+Copy and paste the following instructions to your OpenClaw agent to automatically configure this MCP server:
+
+> Please help me set up the OpenCode MCP Server in OpenClaw. Follow these steps:
+>
+> **Step 1: Clone the repository**
+> ```bash
+> git clone https://github.com/shiquda/opencode-mcp-server.git ~/.openclaw/mcp-servers/opencode-mcp-server
+> ```
+>
+> **Step 2: Install dependencies and build**
+> ```bash
+> cd ~/.openclaw/mcp-servers/opencode-mcp-server && npm install && npm run build
+> ```
+>
+> **Step 3: Add to MCP configuration**
+> Add the following to `~/.openclaw/config/mcporter.json` (replace `YOUR_OPENCODE_PASSWORD` with your OpenCode password):
+> ```json
+> {
+>   "mcpServers": {
+>     "opencode-remote": {
+>       "command": "node",
+>       "args": [
+>         "$HOME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js",
+>         "stdio"
+>       ],
+>       "env": {
+>         "OPENCODE_URL": "http://127.0.0.1:4096",
+>         "OPENCODE_USERNAME": "opencode",
+>         "OPENCODE_PASSWORD": "YOUR_OPENCODE_PASSWORD",
+>         "OPENCODE_AUTH_TYPE": "basic"
+>       }
+>     }
+>   }
+> }
+> ```
+>
+> **Step 4: Test the connection**
+> After configuration, call the `opencode_check_health` tool to test if the connection works.
+>
+> For remote OpenCode server (via Tailscale), use the Tailscale IP instead:
+> ```json
+> "OPENCODE_URL": "http://100.x.x.x:4096"
+> ```
+
+### Option 2: Manual Installation
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/opencode-mcp-server.git
