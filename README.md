@@ -41,7 +41,7 @@ Copy and paste the following instructions to your OpenClaw agent to automaticall
 >     "opencode-remote": {
 >       "command": "node",
 >       "args": [
->         "$HOME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js",
+>         "/home/USERNAME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js",
 >         "stdio"
 >       ],
 >       "env": {
@@ -54,6 +54,7 @@ Copy and paste the following instructions to your OpenClaw agent to automaticall
 >   }
 > }
 > ```
+> Note: Replace `USERNAME` with your actual Linux username (use `whoami` to check).
 >
 > **Step 4: Test the connection**
 > After configuration, call the `opencode_check_health` tool to test if the connection works.
@@ -174,14 +175,15 @@ Server will start at `http://localhost:3000`.
 
 ### OpenClaw
 
-Edit `~/.openclaw/mcp.json`:
+OpenClaw uses `~/.openclaw/config/mcporter.json` for MCP server configuration.
 
+**Configuration format:**
 ```json
 {
   "mcpServers": {
     "opencode-remote": {
       "command": "node",
-      "args": ["/path/to/opencode-mcp-server/dist/index.js", "stdio"],
+      "args": ["/home/USERNAME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js", "stdio"],
       "env": {
         "OPENCODE_URL": "http://127.0.0.1:4096",
         "OPENCODE_USERNAME": "opencode",
@@ -193,6 +195,12 @@ Edit `~/.openclaw/mcp.json`:
 }
 ```
 
+**Security Best Practices:**
+- Use absolute paths in `args` (avoid `$HOME` or `~`)
+- Store sensitive credentials in environment variables
+- Use `127.0.0.1` for local servers, Tailscale IP for remote
+- Never commit passwords to version control
+
 ### Remote Server Example (using Tailscale)
 
 ```json
@@ -200,7 +208,7 @@ Edit `~/.openclaw/mcp.json`:
   "mcpServers": {
     "opencode-remote": {
       "command": "node",
-      "args": ["/path/to/opencode-mcp-server/dist/index.js", "stdio"],
+      "args": ["/home/USERNAME/.openclaw/mcp-servers/opencode-mcp-server/dist/index.js", "stdio"],
       "env": {
         "OPENCODE_URL": "http://100.72.207.100:4096",
         "OPENCODE_USERNAME": "opencode",
@@ -210,6 +218,7 @@ Edit `~/.openclaw/mcp.json`:
     }
   }
 }
+```
 ```
 
 ## 🛠️ Available Tools
