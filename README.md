@@ -14,7 +14,6 @@ A Model Context Protocol (MCP) server that enables remote interaction with [Open
 
 - Node.js 18+
 - OpenCode running in server mode (`opencode serve`)
-- Notion API key (optional, for project management features)
 
 ## 🛠️ Installation
 
@@ -35,8 +34,8 @@ npm run build
 Create a `.env` file:
 
 ```env
-# OpenCode server URL
-OPENCODE_URL=http://localhost:8848
+# OpenCode server URL (default: local)
+OPENCODE_URL=http://127.0.0.1:8848
 
 # Authentication type: basic | bearer | none
 OPENCODE_AUTH_TYPE=basic
@@ -51,6 +50,58 @@ OPENCODE_PASSWORD=your-password
 
 # MCP Server port (for SSE mode)
 PORT=3000
+```
+
+## 🌐 Remote Access Setup
+
+To access your OpenCode server remotely, you can use one of these methods:
+
+### Method 1: Tailscale (Recommended)
+
+[Tailscale](https://tailscale.com) creates a secure mesh network between your devices.
+
+```bash
+# Install Tailscale on both machines
+curl -fsSL https://tailscale.com/install.sh | sh
+
+# Start Tailscale
+sudo tailscale up
+
+# Get your Tailscale IP
+tailscale ip -4
+# Example: 100.x.x.x
+```
+
+Then configure with Tailscale IP:
+```env
+OPENCODE_URL=http://100.x.x.x:8848
+```
+
+### Method 2: ngrok
+
+[ngrok](https://ngrok.com) exposes local servers to the internet.
+
+```bash
+# Install ngrok
+# https://ngrok.com/download
+
+# Expose your OpenCode server
+ngrok http 8848
+
+# Use the provided https URL
+OPENCODE_URL=https://xxxx.ngrok-free.app
+```
+
+### Method 3: frp
+
+[frp](https://github.com/fatedier/frp) is a fast reverse proxy for NAT traversal.
+
+```bash
+# Run frpc on your local machine (where OpenCode runs)
+./frpc -c frpc.ini
+
+# Use your VPS IP in configuration
+OPENCODE_URL=http://your-vps-ip:8848
 ```
 
 ## 🏃 Usage
@@ -84,7 +135,7 @@ Edit `~/.openclaw/mcp.json`:
       "command": "node",
       "args": ["/path/to/opencode-mcp-server/dist/index.js", "stdio"],
       "env": {
-        "OPENCODE_URL": "http://100.72.207.100:8848",
+        "OPENCODE_URL": "http://127.0.0.1:8848",
         "OPENCODE_USERNAME": "opencode",
         "OPENCODE_PASSWORD": "your-password",
         "OPENCODE_AUTH_TYPE": "basic"
@@ -94,9 +145,7 @@ Edit `~/.openclaw/mcp.json`:
 }
 ```
 
-### Claude Desktop
-
-Edit Claude Desktop configuration:
+### Remote Server Example (using Tailscale)
 
 ```json
 {
@@ -182,58 +231,53 @@ Check OpenCode server connectivity.
 
 ## 💡 Usage Examples
 
-### Example 1: Using Default Configuration
+### Example 1: Local Development (127.0.0.1)
 
-Simply ask in OpenClaw/Claude:
+For local development with OpenCode running on the same machine:
 
-> "Help me create a login function"
-
-AI will automatically call `opencode_chat` using settings from `.env`.
-
-### Example 2: Connect to Different OpenCode Server
-
-> "Using http://192.168.1.50:8848, write me a web scraper"
-
-AI will pass custom URL:
 ```json
 {
-  "message": "Write me a web scraper",
-  "url": "http://192.168.1.50:8848"
+  "name": "opencode_chat",
+  "arguments": {
+    "message": "Help me create a login function",
+    "url": "http://127.0.0.1:8848"
+  }
+}
+```
+
+### Example 2: Connect via Tailscale
+
+When your OpenCode server is on another machine in your Tailscale network:
+
+```json
+{
+  "name": "opencode_chat",
+  "arguments": {
+    "message": "Write me a web scraper",
+    "url": "http://100.72.207.100:8848"
+  }
 }
 ```
 
 ### Example 3: Using Username/Password Authentication
 
-> "Use basic auth with admin/123456, check server status"
-
 ```json
 {
   "auth_type": "basic",
-  "username": "admin",
-  "password": "123456"
+  "username": "opencode",
+  "password": "your-password"
 }
 ```
 
 ### Example 4: Multi-Server Management
 
-> "List all sessions from server A, then create a new session on server B"
+Manage multiple OpenCode instances across different machines:
 
-First call:
 ```json
 {
   "name": "opencode_list_sessions",
   "arguments": {
-    "url": "http://server-a:8848"
-  }
-}
-```
-
-Second call:
-```json
-{
-  "name": "opencode_create_session",
-  "arguments": {
-    "url": "http://server-b:8848"
+    "url": "http://100.72.207.100:8848"
   }
 }
 ```
@@ -278,15 +322,15 @@ No auth header sent.
 After starting the MCP Server, you can check:
 
 ```bash
-curl http://localhost:3000/health
+curl http://127.0.0.1:3000/health
 ```
 
 Response:
 ```json
 {
   "status": "ok",
-  "version": "2.0.0",
-  "defaultEndpoint": "http://100.72.207.100:8848",
+  "version": "0.1.0",
+  "defaultEndpoint": "http://127.0.0.1:8848",
   "authType": "basic"
 }
 ```
@@ -325,6 +369,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [OpenCode](https://opencode.ai)
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [MCP SDK TypeScript](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Tailscale](https://tailscale.com) - Secure networking
+- [ngrok](https://ngrok.com) - Tunneling
+- [frp](https://github.com/fatedier/frp) - Fast reverse proxy
 
 ## 🙏 Acknowledgments
 
