@@ -17,7 +17,38 @@ A Model Context Protocol (MCP) server that enables remote interaction with [Open
 
 ## 🛠️ Installation
 
-### Option 1: Quick Setup via OpenClaw (Recommended for OpenClaw Users)
+### Option 1: Install from npm (Recommended)
+
+The easiest way to install is via npm:
+
+```bash
+# Install globally
+npm install -g opencode-mcp-server
+
+# Or use with npx (no installation required)
+npx opencode-mcp-server
+```
+
+Then configure in OpenClaw:
+
+```json
+{
+  "mcpServers": {
+    "opencode-remote": {
+      "command": "npx",
+      "args": ["-y", "opencode-mcp-server"],
+      "env": {
+        "OPENCODE_URL": "http://127.0.0.1:4096",
+        "OPENCODE_USERNAME": "opencode",
+        "OPENCODE_PASSWORD": "your-password",
+        "OPENCODE_AUTH_TYPE": "basic"
+      }
+    }
+  }
+}
+```
+
+### Option 2: Quick Setup via OpenClaw (Recommended for OpenClaw Users)
 
 Copy and paste the following instructions to your OpenClaw agent to automatically configure this MCP server:
 
