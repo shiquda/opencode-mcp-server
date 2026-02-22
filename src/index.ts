@@ -22,7 +22,7 @@ dotenv.config({ path: join(__dirname, '../.env') });
 
 // Default configuration (loaded from environment variables)
 const DEFAULT_CONFIG = {
-  url: process.env.OPENCODE_URL || 'http://localhost:8848',
+  url: process.env.OPENCODE_URL || 'http://127.0.0.1:4096',
   username: process.env.OPENCODE_USERNAME || '',
   password: process.env.OPENCODE_PASSWORD || '',
   token: process.env.OPENCODE_TOKEN || '',
