@@ -62,6 +62,13 @@ type PendingQuestion = {
 	}>;
 };
 
+type SessionStatusInfo = {
+	type: "idle" | "busy" | "retry";
+	attempt?: number;
+	message?: string;
+	next?: number;
+};
+
 // Generate authentication headers
 function getAuthHeader(config: typeof DEFAULT_CONFIG): Record<string, string> {
 	const headers: Record<string, string> = {};
@@ -265,6 +272,24 @@ function getFirstTextPreview(message: unknown, maxLength = 180): string | null {
 	return null;
 }
 
+function findLatestAssistantReplyByParentId(
+	messages: unknown[],
+	parentMessageId: string,
+): unknown | null {
+	for (let i = messages.length - 1; i >= 0; i -= 1) {
+		const message = messages[i];
+		if (getMessageRole(message) !== "assistant") {
+			continue;
+		}
+		if (getMessageParentId(message) !== parentMessageId) {
+			continue;
+		}
+		return message;
+	}
+
+	return null;
+}
+
 function normalizePendingQuestions(value: unknown): PendingQuestion[] {
 	if (!Array.isArray(value)) {
 		return [];
@@ -301,6 +326,52 @@ async function fetchPendingQuestionsForSession(
 	return normalizePendingQuestions(raw).filter(
 		(question) => question.sessionID === sessionId,
 	);
+}
+
+function normalizeSessionStatusInfo(value: unknown): SessionStatusInfo | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const record = value as Record<string, unknown>;
+	const type = record.type;
+	if (type !== "idle" && type !== "busy" && type !== "retry") {
+		return null;
+	}
+
+	const normalized: SessionStatusInfo = { type };
+	if (typeof record.attempt === "number") {
+		normalized.attempt = record.attempt;
+	}
+	if (typeof record.message === "string") {
+		normalized.message = record.message;
+	}
+	if (typeof record.next === "number") {
+		normalized.next = record.next;
+	}
+
+	return normalized;
+}
+
+function getSessionStatusForSession(
+	value: unknown,
+	sessionId: string,
+): SessionStatusInfo | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const statuses = value as Record<string, unknown>;
+	return normalizeSessionStatusInfo(statuses[sessionId]);
+}
+
+async function fetchSessionStatusForSession(
+	baseUrl: string,
+	authHeaders: Record<string, string>,
+	sessionId: string,
+): Promise<SessionStatusInfo | null> {
+	const raw = await fetchOptionalJson(`${baseUrl}/session/status`, authHeaders);
+	return getSessionStatusForSession(raw, sessionId);
 }
 
 function encodeCursor(payload: CursorPayload): string {
@@ -567,7 +638,7 @@ const TOOLS: Tool[] = [
 	{
 		name: "opencode_wait_for_reply",
 		description:
-			"Wait for the assistant reply of a specific async request id",
+			"Wait for assistant output of an async request. Returns full reply when idle, partial reply while streaming, or diagnostics on timeout.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -1118,8 +1189,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 						Math.max(Math.floor(poll_limit ?? 200), 1),
 						MAX_MESSAGE_LIMIT,
 					);
+					const startTime = Date.now();
 
-					const deadline = Date.now() + timeoutMs;
+					const deadline = startTime + timeoutMs;
 					while (Date.now() < deadline) {
 						const messages = await fetchSessionMessages(
 							baseUrl,
@@ -1128,36 +1200,64 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 							pollLimitValue,
 						);
 
-						for (let i = messages.length - 1; i >= 0; i -= 1) {
-							const message = messages[i];
-							const role = getMessageRole(message);
-							const id = getMessageId(message);
-							const parentId = getMessageParentId(message);
-							if (role !== "assistant") {
-								continue;
+						const latestMatchingReply = findLatestAssistantReplyByParentId(
+							messages,
+							targetMessageId,
+						);
+
+						if (latestMatchingReply) {
+							const sessionStatus = await fetchSessionStatusForSession(
+								baseUrl,
+								authHeaders,
+								session_id,
+							);
+
+							let resolvedReply = latestMatchingReply;
+							if (sessionStatus?.type === "idle") {
+								const refreshedMessages = await fetchSessionMessages(
+									baseUrl,
+									authHeaders,
+									session_id,
+									pollLimitValue,
+								).catch(() => null as unknown[] | null);
+
+								if (refreshedMessages) {
+									const refreshedReply = findLatestAssistantReplyByParentId(
+										refreshedMessages,
+										targetMessageId,
+									);
+									if (refreshedReply) {
+										resolvedReply = refreshedReply;
+									}
+								}
 							}
 
-							if (parentId !== targetMessageId) {
-								continue;
-							}
+							const stillStreaming =
+								sessionStatus?.type === "busy" || sessionStatus?.type === "retry";
 
 							const payload = {
 								session_id,
 								async_request_id,
 								target_parent_message_id: targetMessageId,
-								reply_message_id: id,
-								reply: message,
+								reply_message_id: getMessageId(resolvedReply),
+								reply: resolvedReply,
+								streaming: stillStreaming,
+								session_status: sessionStatus,
 								wait: {
 									timeout_seconds: timeoutMs / 1000,
-									elapsed_ms: timeoutMs - (deadline - Date.now()),
+									elapsed_ms: Date.now() - startTime,
 									poll_interval_ms: intervalMs,
 								},
+								next_action: stillStreaming
+									? "Assistant output is still streaming. Call opencode_wait_for_reply again with the same async_request_id for further incremental output."
+									: undefined,
 							};
+
 							return {
 								content: [
 									{
 										type: "text",
-										text: `✅ Assistant reply received\n${JSON.stringify(payload, null, 2)}`,
+										text: `${stillStreaming ? "🟡 Partial assistant reply (still streaming)" : "✅ Assistant reply received"}\n${JSON.stringify(payload, null, 2)}`,
 									},
 								],
 							};
@@ -1187,7 +1287,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 													}),
 												),
 												wait: {
-													elapsed_ms: timeoutMs - (deadline - Date.now()),
+													elapsed_ms: Date.now() - startTime,
 													poll_interval_ms: intervalMs,
 												},
 												next_action:
@@ -1210,69 +1310,98 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 								type: "text",
 								text: `⏱️ Timeout waiting for assistant reply\n${JSON.stringify(
 									await (async () => {
-										const latestMessages = await fetchSessionMessages(
-											baseUrl,
-											authHeaders,
-											session_id,
-											pollLimitValue,
-										).catch(() => [] as unknown[]);
+										try {
+											const latestMessages = await fetchSessionMessages(
+												baseUrl,
+												authHeaders,
+												session_id,
+												pollLimitValue,
+											).catch(() => [] as unknown[]);
 
-										const assistantMessages = latestMessages.filter(
-											(message) => getMessageRole(message) === "assistant",
-										);
-										const matchingParent = assistantMessages.filter(
-											(message) => getMessageParentId(message) === targetMessageId,
-										);
-										const latestAssistant = assistantMessages.at(assistantMessages.length - 1);
-										const latestMatching = matchingParent.at(matchingParent.length - 1);
+											const assistantMessages = latestMessages.filter(
+												(message) => getMessageRole(message) === "assistant",
+											);
+											const matchingParent = assistantMessages.filter(
+												(message) => getMessageParentId(message) === targetMessageId,
+											);
+											const latestAssistant = assistantMessages.at(-1);
+											const latestMatching = matchingParent.at(-1);
+											const sessionStatus = await fetchSessionStatusForSession(
+												baseUrl,
+												authHeaders,
+												session_id,
+											).catch(() => null as SessionStatusInfo | null);
 
-										const pendingPermissions = await fetchOptionalJson(
-											`${baseUrl}/permission`,
-											authHeaders,
-										);
-										const pendingQuestions = await fetchOptionalJson(
-											`${baseUrl}/question`,
-											authHeaders,
-										);
+											const pendingPermissions = await fetchOptionalJson(
+												`${baseUrl}/permission`,
+												authHeaders,
+											).catch(() => null);
+											const pendingQuestions = await fetchOptionalJson(
+												`${baseUrl}/question`,
+												authHeaders,
+											).catch(() => null);
 
-										return {
-											session_id,
-											async_request_id,
-											target_parent_message_id: targetMessageId,
-											wait: {
-												timeout_seconds: timeoutMs / 1000,
-												poll_interval_ms: intervalMs,
-												poll_limit: pollLimitValue,
-											},
-											diagnostics: {
-												message_window_count: latestMessages.length,
-												assistant_count_in_window: assistantMessages.length,
-												matching_parent_count: matchingParent.length,
-												latest_assistant: latestAssistant
-													? {
-														id: getMessageId(latestAssistant),
-														parentID: getMessageParentId(latestAssistant),
-														part_types: getPartTypes(latestAssistant),
-														text_preview: getFirstTextPreview(latestAssistant),
-													}
-													: null,
-												latest_matching_parent: latestMatching
-													? {
-														id: getMessageId(latestMatching),
-														part_types: getPartTypes(latestMatching),
-														text_preview: getFirstTextPreview(latestMatching),
-													}
-													: null,
-												pending_permissions_count: Array.isArray(pendingPermissions)
-													? pendingPermissions.length
-													: null,
-												pending_questions_count: Array.isArray(pendingQuestions)
-													? pendingQuestions.length
-													: null,
-											},
-											note:
-												"Request was accepted by prompt_async, but no matching assistant reply appeared before timeout.",
-										};
+											return {
+												session_id,
+												async_request_id,
+												target_parent_message_id: targetMessageId,
+												timed_out: true,
+												streaming:
+													sessionStatus?.type === "busy" || sessionStatus?.type === "retry",
+												session_status: sessionStatus,
+												latest_partial_reply: latestMatching ?? null,
+												wait: {
+													timeout_seconds: timeoutMs / 1000,
+													poll_interval_ms: intervalMs,
+													poll_limit: pollLimitValue,
+													elapsed_ms: Date.now() - startTime,
+												},
+												diagnostics: {
+													message_window_count: latestMessages.length,
+													assistant_count_in_window: assistantMessages.length,
+													matching_parent_count: matchingParent.length,
+													latest_assistant: latestAssistant
+														? {
+															id: getMessageId(latestAssistant),
+															parentID: getMessageParentId(latestAssistant),
+															part_types: getPartTypes(latestAssistant),
+															text_preview: getFirstTextPreview(latestAssistant),
+														}
+														: null,
+													latest_matching_parent: latestMatching
+														? {
+															id: getMessageId(latestMatching),
+															part_types: getPartTypes(latestMatching),
+															text_preview: getFirstTextPreview(latestMatching),
+														}
+														: null,
+													pending_permissions_count: Array.isArray(pendingPermissions)
+														? pendingPermissions.length
+														: null,
+													pending_questions_count: Array.isArray(pendingQuestions)
+														? pendingQuestions.length
+														: null,
+												},
+												note:
+													latestMatching
+														? "Timeout reached. Returned the latest partial reply found in the session window."
+														: "Request was accepted by prompt_async, but no matching assistant reply appeared before timeout.",
+											};
+										} catch {
+											return {
+												session_id,
+												async_request_id,
+												target_parent_message_id: targetMessageId,
+												timed_out: true,
+												wait: {
+													timeout_seconds: timeoutMs / 1000,
+													poll_interval_ms: intervalMs,
+													poll_limit: pollLimitValue,
+													elapsed_ms: Date.now() - startTime,
+												},
+												note: "Timeout reached, but diagnostic payload collection failed.",
+											};
+										}
 									})(),
 									null,
 									2,
